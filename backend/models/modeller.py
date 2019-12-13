@@ -15,7 +15,7 @@ class Modeller:
         return reduce(lambda result, output: self.__best_between(result, output), generated_model.chains[0].seq.outputs)
 
     def __generate_model(self, alignment_file, pdb_id, sequence):
-        os.chdir('./backend/modeller')
+        # os.chdir('./backend/modeller')
         generated_model = automodel(self.env, alnfile=alignment_file, knowns=pdb_id, sequence=sequence,
                                     assess_methods=assess.DOPE)
         # code of the target
@@ -23,13 +23,13 @@ class Modeller:
         generated_model.ending_model = 5  # index of the last model
         # (determines how many models to calculate)
         generated_model.make()  # do the actual homology modeling
-        os.chdir('../..')
+        # os.chdir('../..')
         return generated_model
 
     def __environment(self):
         env = environ()  # create a new MODELLER environment to build this model in
         # directories for input atom files
-        env.io.atom_files_directory = '../atom_files'
+        env.io.atom_files_directory = './atom_files'
         env.io.hetatm = True
 
         return env

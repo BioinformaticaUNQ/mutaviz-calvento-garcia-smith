@@ -2,13 +2,13 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { LOADING, FORM, RESULT } from '../../reducers/appReducer'
 import Loading from '../Loading'
-import Form from '../Form'
+import ConnectedForm from '../Form'
 import Result from '../Result'
 
 const contentFromPageState = (state) => {
   switch (state) {
     case LOADING: return <Loading />
-    case FORM: return <Form />
+    case FORM: return <ConnectedForm />
     case RESULT: return <Result />
   }
 }

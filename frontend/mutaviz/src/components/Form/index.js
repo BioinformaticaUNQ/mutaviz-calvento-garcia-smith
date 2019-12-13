@@ -1,9 +1,9 @@
 import React from 'react'
 
-const Form = () => {
+const ConnectedForm = () => {
   return (
     <p> form </p>
   )
 }
 
-export default Form
+export default ConnectedForm

@@ -19,14 +19,8 @@ class Aligner:
     def file_align(self):
         self.__fetch_structure_info()
         fasta_path = self.__in_file(lambda file: self.write_fasta(file))
-        aligment_file_path = self.random_file_name()
 
-        clustalomega_cline = ClustalOmegaCommandline(
-            infile=fasta_path, outfile=aligment_file_path, verbose=True, auto=True
-        )
-        os.system(str(clustalomega_cline))
-
-        return aligment_file_path
+        return fasta_path
 
     def __in_file(self, write_block):
         file_path = self.random_file_name()
@@ -39,11 +33,6 @@ class Aligner:
         file.write(">%s" % self.__sequence_name)
         file.write("\n")
         file.write(self.__sequence_1)
-        file.write("\n")
-        file.write("\n")
-        file.write(">%s" % self.__pdb_key)
-        file.write("\n")
-        file.write(self.__sequence_2)
 
     def random_file_name(self):
         return FileNameGenerator().random(extension='fasta', path=self.__path)
@@ -90,12 +79,13 @@ class AlignmentFormatter:
         e = environ()
         a = alignment(e, file=self.__in_file, align_codes='all', alignment_format='FASTA')
         a.write(file=self.__out_file, alignment_format='PIR')
-        with open(self.__out_file, "r") as f:
-            read = f.read()
-            file_lines = read.strip().split(">")
-        sequences = list(map(lambda line: self.__get_sequence(line.split("\n")), file_lines))
-        sequences = list(filter(lambda seq: seq, sequences))
-        return self.__generate_pir_file(sequences)
+        return self.__out_file
+        # with open(self.__out_file, "r") as f:
+        #     read = f.read()
+        #     file_lines = read.strip().split(">")
+        # sequences = list(map(lambda line: self.__get_sequence(line.split("\n")), file_lines))
+        # sequences = list(filter(lambda seq: seq, sequences))
+        # return self.__generate_pir_file(sequences)
 
     def __generate_pir_file(self, sequences):
         file_path = self.random_file_name()
@@ -113,7 +103,7 @@ class AlignmentFormatter:
         sequence_name = structure_info["seq_name"]
         file.write(">P1;%s" % sequence_name)
         file.write("\n")
-        file.write("sequence:%s:1::%s::::0.00:0.00" % (sequence_name, len(sequences[0]) + 1))
+        file.write("%s::::::::-1.00:-1.00" % (sequence_name))
         file.write("\n")
         file.write(sequences[0])
         file.write("\n")
@@ -123,7 +113,7 @@ class AlignmentFormatter:
         file.write("\n")
         file.write(
             f"structureX:{pdb_key}:{structure_info['start']}:{structure_info['chain']}:{structure_info['end']}"
-            f":{structure_info['chain']}:::0.00:0.00"
+            f":{structure_info['chain']}:::-1.00:-1.00"
         )
         file.write("\n")
         file.write(sequences[1])

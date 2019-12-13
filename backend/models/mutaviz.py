@@ -7,6 +7,7 @@ from backend.models.aligner import Aligner, AlignmentFormatter
 from backend.models.file_name_generator import FileNameGenerator
 from backend.models.modeller import Modeller
 from backend.models.synth import Synthesizer
+from modeller import *
 
 
 class Mutaviz:
@@ -64,7 +65,7 @@ class Mutaviz:
         # scan_result = NCBIWWW.qblast(
         #     "blastp", "pdb", self.__protein_chain, word_size=2, threshold=200000, matrix_name="BLOSUM62", gapcosts="11 1"
         # )
-        with open("backend/serum_albumin_result.xml", "r") as f:
+        with open("backend/Z7ZU2J3C016-Alignment.xml", "r") as f:
             file = f.read()
         scan_result = StringIO(file)
         print("Blast query done")
@@ -80,6 +81,7 @@ class Mutaviz:
         return self.__most_similar_structure.hsps[0].sbjct
 
     def align(self, protein):
+
         aligner = Aligner(path="backend/alignments", sequence_name=self.__sequence_name, sequence_1=protein,
                           pdb_key=self.__pdb_key(), sequence_2=self.__matching_sequence())
         align_file_path = aligner.file_align()
@@ -87,7 +89,18 @@ class Mutaviz:
         self.__original_pdb_filename = aligner.pdb_file_path
 
         pir_file_path = FileNameGenerator().random(extension='pir', path='backend/alignments')
-        return AlignmentFormatter(align_file_path, pir_file_path, aligner.structure_info(), "backend/alignments").to_pir()
+        result_pir_file_path = FileNameGenerator().random(extension='pir', path='backend/alignments')
+        AlignmentFormatter(align_file_path, pir_file_path, aligner.structure_info(), "backend/alignments").to_pir()
+
+        env = environ()
+        aln = alignment(env)
+        mdl = model(env, file=self.__original_pdb_filename)
+        aln.append_model(mdl, align_codes=self.__pdb_key(), atom_files=self.__original_pdb_filename)
+        aln.append(file=pir_file_path, align_codes=self.__sequence_name)
+        aln.align2d()
+        aln.write(file=result_pir_file_path, alignment_format='PIR')
+        print(result_pir_file_path)
+        return result_pir_file_path
 
     @property
     def protein_chain(self):
