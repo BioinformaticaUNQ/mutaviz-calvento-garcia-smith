@@ -107,3 +107,11 @@ venv.bak/
 
 frontend/node_modules
 .vscode
+
+# mutaviz
+backend/modeller/
+backend/outputs/
+backend/bk/
+backend/alignments/
+backend/atom_files/
+obsolete/

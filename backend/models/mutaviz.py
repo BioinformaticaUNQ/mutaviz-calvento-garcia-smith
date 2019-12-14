@@ -1,13 +1,19 @@
 from functools import reduce
 from io import StringIO
+from os import mkdir
+from os.path import isdir
+from pathlib import Path
+from shutil import copyfile, rmtree
 
 from Bio.Blast import NCBIWWW, NCBIXML
+from modeller import *
+from pymol2 import PyMOL
 
+from backend.models import logs
 from backend.models.aligner import Aligner, AlignmentFormatter
 from backend.models.file_name_generator import FileNameGenerator
 from backend.models.modeller import Modeller
 from backend.models.synth import Synthesizer
-from modeller import *
 
 
 class Mutaviz:
@@ -19,28 +25,60 @@ class Mutaviz:
         self.__most_similar_structure = None
         self.__mutated_sequence = None
         self.__original_pdb_filename = None
+        self.__logger = logs.logger()
 
     def process(self):
-        print("Processing chain")
+        self.__add_required_dirs()
+        self.__debug("Processing sequence " + self.__seq_string)
         self.__protein_chain = self.synthesize(self.__seq_string)
-        print("Chain " + self.__protein_chain)
-        self.blast()
+        self.__debug("Resulting chain " + self.__protein_chain)
+        self.__blast()
+        results = self.__process_and_model_blast_result()
+        self.__print_results(results)
+        self.__clean_files()
+
+    def __print_results(self, results):
+        pymol = PyMOL()
+        pymol.start()
+        pymol.cmd.load(results[0], "result_1")
+        pymol.cmd.load(results[1], "result_2")
+        pymol.cmd.png(self.__outputs_path() + "model_alignment.png")
+
+    def __process_and_model_blast_result(self):
         if self.is_same_protein():
+            self.__debug("Exact protein found!")
             self.mutate()
             mutated_protein = self.synthesize(self.__mutated_sequence)
+            self.__debug("Mutated protein: " + mutated_protein)
             alignment_file = self.align(mutated_protein)
-            print(alignment_file)
+            output_pdb_file = self.__move_to_outputs(self.__original_pdb_filename, self.__pdb_key() + ".pdb")
+            self.__debug("Alignment file: " + alignment_file)
             model_filename = self.model_structure(alignment_file)
-            return [model_filename, self.__original_pdb_filename]
+            model_pdb_file = self.__move_to_outputs(model_filename,
+                                                    self.__sequence_name + "_" + self.__pdb_key() + ".pdb")
+
+            return [output_pdb_file, model_pdb_file]
         else:
             alignment_file = self.align(self.protein_chain)
-            original_model_filename = self.model_structure(alignment_file)
+            problem_sequence_structure_file = self.model_structure(alignment_file)
+            output_pdb_file = self.__move_to_outputs(problem_sequence_structure_file, self.__pdb_key() + ".pdb")
             self.mutate()
             mutated_protein = self.synthesize(self.__mutated_sequence)
             alignment_file = self.align(mutated_protein)
             print(alignment_file)
             model_filename = self.model_structure(alignment_file)
-            return [model_filename, original_model_filename]
+            model_pdb_file = self.__move_to_outputs(model_filename,
+                                                    self.__sequence_name + "_" + self.__pdb_key() + ".pdb")
+            return [output_pdb_file, model_pdb_file]
+
+    def __move_to_outputs(self, src, filename):
+        return copyfile(src, self.__outputs_path() + filename)
+
+    def __outputs_path(self):
+        return str(Path(__file__).parent.parent) + '/outputs/'
+
+    def __debug(self, message):
+        return self.__logger.info(message)
 
     def model_structure(self, alignment_file):
         return 'backend/modeller/' + Modeller().execute(
@@ -53,26 +91,27 @@ class Mutaviz:
     def mutate(self):
         self.__mutated_sequence = self.__seq_string
 
+        self.__debug("Mutating sequence")
         for (position, mutation) in self.__mutations.items():
             changing_seq = list(self.__mutated_sequence)
             changing_seq[position] = mutation
             self.__mutated_sequence = ''.join(changing_seq)
 
+        self.__debug("Mutated sequence: " + self.__mutated_sequence)
         return self.__mutated_sequence
 
-    def blast(self):
-        print("Blast")
+    def __blast(self):
+        self.__debug("Performing blast")
         # scan_result = NCBIWWW.qblast(
         #     "blastp", "pdb", self.__protein_chain, word_size=2, threshold=200000, matrix_name="BLOSUM62", gapcosts="11 1"
         # )
-        with open("backend/Z7ZU2J3C016-Alignment.xml", "r") as f:
+        with open("backend/serum_albumin_result.xml", "r") as f:
             file = f.read()
         scan_result = StringIO(file)
-        print("Blast query done")
+        self.__debug("Blast query done")
         blast_records = NCBIXML.read(scan_result)
-        print("Finding best match")
+        self.__debug("Finding best match")
         self.__most_similar_structure = reduce(lambda result, output: self.__most_similar_between(result, output), blast_records.alignments)
-        # self.__most_similar_structure = blast_records.alignments[1]
 
     def __pdb_key(self):
         return self.__most_similar_structure.accession.split("_")[0]
@@ -81,7 +120,6 @@ class Mutaviz:
         return self.__most_similar_structure.hsps[0].sbjct
 
     def align(self, protein):
-
         aligner = Aligner(path="backend/alignments", sequence_name=self.__sequence_name, sequence_1=protein,
                           pdb_key=self.__pdb_key(), sequence_2=self.__matching_sequence())
         align_file_path = aligner.file_align()
@@ -111,15 +149,30 @@ class Mutaviz:
         return self.__seq_string
 
     def __most_similar_between(self, alignment, another_alignment):
-        if self.identity_percentage(alignment) > self.identity_percentage(another_alignment):
+        if self.identity_percentage(alignment) >= self.identity_percentage(another_alignment):
             return alignment
         return another_alignment
 
     def identity_percentage(self, alignment):
         hsp = alignment.hsps[0]
-        return round(hsp.identities / hsp.align_length, 2)
+        return round(hsp.identities / hsp.align_length, 1)
 
     def is_same_protein(self):
         # Hsp_identity / Hsp_align - len
-        print(self.identity_percentage(self.__most_similar_structure))
-        return self.identity_percentage(self.__most_similar_structure) == 1
+        identity_percentage = self.identity_percentage(self.__most_similar_structure)
+        self.__debug("Matching structure identity percentage " + str(identity_percentage))
+
+        return identity_percentage == 1
+
+    def __add_required_dirs(self):
+        parent_path = str(Path(__file__).parent.parent)
+        paths = ["/atom_files", "/modeller", "/alignments", "/outputs"]
+        for path in paths:
+            if not isdir(parent_path + path):
+                mkdir(parent_path + path)
+
+    def __clean_files(self):
+        parent_path = str(Path(__file__).parent.parent)
+        paths = ["/atom_files", "/modeller", "/alignments"]
+        for path in paths:
+            rmtree(parent_path + path)
