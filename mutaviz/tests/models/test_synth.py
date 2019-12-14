@@ -1,4 +1,4 @@
-from backend.models.synth import Synthesizer, InvalidSequenceLengthException
+from mutaviz.models.synth import Synthesizer, InvalidSequenceLengthException
 
 
 class TestSynth:
@@ -23,7 +23,7 @@ class TestSynth:
                   'TGATTTCGCAGCTTTTGTAGAGAAGTGCTGCAAGGCTGACGATAAGGAAACCTGCTTTGCCGAGGAGGGTAAAAAACTTGTTGCTGCAAGTCAAGCT' \
                   'GCCTTAGGCTTATAA'
 
-        seq = Synthesizer.accepting(Synthesizer.ADN, albumin).run()
+        seq = Synthesizer.accepting(Synthesizer.DNA, albumin).run()
 
         assert seq == 'MDAHKSEVAHRFKDLGEENFKALVLIAFAQYLQQCPFEDHVKLVNEVTEFAKTCVADESAENCDKSLHTLFGDKLCTVATLRETYGEMADCCA' \
                       'KQEPERNECFLQHKDDNPNLPRLVRPEVDVMCTAFHDNEETFLKKYLYEIARRHPYFYAPELLFFAKRYKAAFTECCQAADKAACLLPKLDEL' \
@@ -54,7 +54,7 @@ class TestSynth:
                  'UGAUUUCGCAGCUUUUGUAGAGAAGUGCUGCAAGGCUGACGAUAAGGAAACCUGCUUUGCCGAGGAGGGUAAAAAACUUGUUGCUGCAAGUCAAGCU' \
                  'GCCUUAGGCUUAUAA'
 
-        seq = Synthesizer.accepting(Synthesizer.ARN, uvi1d).run()
+        seq = Synthesizer.accepting(Synthesizer.RNA, uvi1d).run()
 
         assert 'MDAHKSEVAHRFKDLGEENFKALVLIAFAQYLQQCPFEDHVKLVNEVTEFAKTCVADESAENCDKSLHTLFGDKLCTVATLRETYGEMADCCAKQEPER' \
                'NECFLQHKDDNPNLPRLVRPEVDVMCTAFHDNEETFLKKYLYEIARRHPYFYAPELLFFAKRYKAAFTECCQAADKAACLLPKLDELRDEGKASSAKQR' \
@@ -72,13 +72,13 @@ class TestSynth:
 
     def test_fails_when_the_given_sequence_length_is_not_multiple_of_3(self):
         try:
-            Synthesizer.accepting(Synthesizer.ADN, "AA").run()
+            Synthesizer.accepting(Synthesizer.DNA, "AA").run()
         except InvalidSequenceLengthException as e:
             assert e.message == "Sequence length has to multiple a multiple of 3"
 
     def test_fails_when_the_given_sequence_is_shorter_than_60_chars(self):
         try:
-            Synthesizer.accepting(Synthesizer.ADN, "AAA").run()
+            Synthesizer.accepting(Synthesizer.DNA, "AAA").run()
         except InvalidSequenceLengthException as e:
             assert e.message == "Sequence length not valid. Length has to be greater than 60"
 

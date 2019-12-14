@@ -10,17 +10,18 @@ from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBList
 from pymol2 import PyMOL
 
-from backend.models import logs
-from backend.models.aligner import Aligner
-from backend.models.modeller import Modeller
-from backend.models.synth import Synthesizer
+from mutaviz.models import logs
+from mutaviz.models.aligner import Aligner
+from mutaviz.models.modeller import Modeller
+from mutaviz.models.synth import Synthesizer
 
 
 class Mutaviz:
-    def __init__(self, seq_string, mutations, sequence_name):
+    def __init__(self, seq_string, mutations, seq_name, seq_type):
+        self.__seq_type = seq_type
         self.__mutations = mutations
         self.__seq_string = seq_string
-        self.__sequence_name = sequence_name
+        self.__sequence_name = seq_name
         self.__protein_chain = None
         self.__most_similar_structure = None
         self.__mutated_sequence = None
@@ -34,12 +35,12 @@ class Mutaviz:
     def original_sequence(self):
         return self.__seq_string
 
-    def process(self, word_size=6, threshold=10, matrix_name="BLOSUM62", open_pymol=False):
+    def process(self, word_size=6, threshold=10, matrix_name="BLOSUM62", open_pymol=False, gap_costs="11 1"):
         self.__add_required_dirs()
         self.__debug("Processing sequence " + self.__seq_string)
-        self.__protein_chain = self.__synthesize(self.__seq_string)
+        self.__protein_chain = self.synthesize(self.__seq_string)
         self.__debug("Resulting chain " + self.__protein_chain)
-        self.__blast(word_size, threshold, matrix_name)
+        self.__blast(word_size, threshold, matrix_name, gap_costs)
         results = self.__process_and_model_blast_result()
         self.__print_results(open_pymol, results)
         self.__clean_files()
@@ -61,8 +62,8 @@ class Mutaviz:
     def __process_and_model_blast_result(self):
         if self.__is_same_protein():
             self.__debug("Exact protein found!")
-            self.__mutate()
-            mutated_protein = self.__synthesize(self.__mutated_sequence)
+            self.mutate()
+            mutated_protein = self.synthesize(self.__mutated_sequence)
             self.__debug("Mutated protein: " + mutated_protein)
             pdb_file_path = self.__fetch_pdb()
             alignment_file = self.__align(mutated_protein, pdb_file_path)
@@ -79,8 +80,8 @@ class Mutaviz:
             return [output_pdb_file, model_pdb_file]
 
     def __mutate_and_model(self):
-        self.__mutate()
-        mutated_protein = self.__synthesize(self.__mutated_sequence)
+        self.mutate()
+        mutated_protein = self.synthesize(self.__mutated_sequence)
         self.__debug("Mutated protein: " + mutated_protein)
         pdb_file_path = self.__fetch_pdb()
         alignment_file = self.__align(mutated_protein, pdb_file_path)
@@ -97,16 +98,16 @@ class Mutaviz:
         return self.__logger.info(message)
 
     def __model_structure(self, alignment_file, output_filename):
-        model_filename = 'backend/modeller/' + Modeller().execute(
+        model_filename = 'mutaviz/modeller/' + Modeller().execute(
             alignment_file=alignment_file, pdb_id=self.__pdb_key, sequence=self.__sequence_name
         )['name']
 
         return self.__move_to_outputs(model_filename, output_filename + ".pdb")
 
-    def __synthesize(self, sequence):
-        return Synthesizer.accepting(Synthesizer.ADN, sequence[0:]).run()
+    def synthesize(self, sequence):
+        return Synthesizer.accepting(self.__seq_type, sequence).run()
 
-    def __mutate(self):
+    def mutate(self):
         self.__mutated_sequence = self.__seq_string
 
         self.__debug("Mutating sequence")
@@ -118,13 +119,13 @@ class Mutaviz:
         self.__debug("Mutated sequence: " + self.__mutated_sequence)
         return self.__mutated_sequence
 
-    def __blast(self, word_size, threshold, matrix_name):
+    def __blast(self, word_size, threshold, matrix_name, gap_costs):
         self.__debug("Performing blast")
         # scan_result = NCBIWWW.qblast(
         #     "blastp", "pdb", self.__protein_chain, word_size=word_size,
-        #     threshold=threshold, matrix_name=matrix_name, gapcosts="11 1"
+        #     threshold=threshold, matrix_name=matrix_name, gapcosts=gap_costs
         # )
-        with open("backend/serum_albumin_result.xml", "r") as f:
+        with open("mutaviz/serum_albumin_result.xml", "r") as f:
             file = f.read()
         scan_result = StringIO(file)
         self.__debug("Blast query done")
@@ -142,7 +143,7 @@ class Mutaviz:
         return self.__most_similar_structure.hsps[0].sbjct
 
     def __align(self, protein, pdb_file_path):
-        aligner = Aligner(path="backend/alignments", sequence_name=self.__sequence_name, sequence_1=protein,
+        aligner = Aligner(path="mutaviz/alignments", sequence_name=self.__sequence_name, sequence_1=protein,
                           pdb_key=self.__pdb_key, sequence_2=self.__matching_sequence(), pdb_file_path=pdb_file_path)
         return aligner.execute_alignment()
 
@@ -176,7 +177,7 @@ class Mutaviz:
             rmtree(parent_path + path)
 
     def __fetch_pdb(self):
-        pdb_file_path = PDBList().retrieve_pdb_file(self.__pdb_key, pdir='backend/atom_files', file_format="pdb")
-        new_file_name = 'backend/atom_files/%s.pdb' % self.__pdb_key
+        pdb_file_path = PDBList().retrieve_pdb_file(self.__pdb_key, pdir='mutaviz/atom_files', file_format="pdb")
+        new_file_name = 'mutaviz/atom_files/%s.pdb' % self.__pdb_key
         os.rename(pdb_file_path, new_file_name)
         return new_file_name

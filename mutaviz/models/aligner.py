@@ -1,6 +1,6 @@
 from modeller import *
 
-from backend.models.file_name_generator import FileNameGenerator
+from mutaviz.models.file_name_generator import FileNameGenerator
 
 
 class Aligner:
@@ -22,7 +22,7 @@ class Aligner:
         return result_pir_file_path
 
     def __align(self, align_file_path):
-        alignments_path = 'backend/alignments'
+        alignments_path = 'mutaviz/alignments'
         pir_file_path = FileNameGenerator().random(extension='pir', path=alignments_path)
         self.__fasta_to_pir(align_file_path, pir_file_path)
         env = environ()

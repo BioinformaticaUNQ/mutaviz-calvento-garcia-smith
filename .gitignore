@@ -109,9 +109,9 @@ frontend/node_modules
 .vscode
 
 # mutaviz
-backend/modeller/
-backend/outputs/
-backend/bk/
-backend/alignments/
-backend/atom_files/
+mutaviz/modeller/
+mutaviz/outputs/
+mutaviz/bk/
+mutaviz/alignments/
+mutaviz/atom_files/
 obsolete/

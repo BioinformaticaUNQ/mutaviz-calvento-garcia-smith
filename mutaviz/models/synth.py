@@ -9,8 +9,8 @@ class InvalidSequenceLengthException(Exception):
 
 class Synthesizer:
     STOP = '_'
-    ADN = 'ADN'
-    ARN = 'ARN'
+    DNA = 'DNA'
+    RNA = 'RNA'
     PROTEIN = 'PROTEIN'
 
     @classmethod
@@ -62,7 +62,7 @@ class Synthesizer:
 class AdnSynthesizer(Synthesizer):
     @classmethod
     def synth_type(cls):
-        return cls.ADN
+        return cls.DNA
 
     def table(self):
         return {
@@ -88,7 +88,7 @@ class AdnSynthesizer(Synthesizer):
 class ArnSynthesizer(Synthesizer):
     @classmethod
     def synth_type(cls):
-        return cls.ARN
+        return cls.RNA
 
     def table(self):
         return {
