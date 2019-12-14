@@ -34,22 +34,29 @@ class Mutaviz:
     def original_sequence(self):
         return self.__seq_string
 
-    def process(self, word_size=6, threshold=10, matrix_name="BLOSUM62"):
+    def process(self, word_size=6, threshold=10, matrix_name="BLOSUM62", open_pymol=False):
         self.__add_required_dirs()
         self.__debug("Processing sequence " + self.__seq_string)
         self.__protein_chain = self.__synthesize(self.__seq_string)
         self.__debug("Resulting chain " + self.__protein_chain)
         self.__blast(word_size, threshold, matrix_name)
         results = self.__process_and_model_blast_result()
-        self.__print_results(results)
+        self.__print_results(open_pymol, results)
         self.__clean_files()
 
-    def __print_results(self, results):
-        pymol = PyMOL()
-        pymol.start()
-        pymol.cmd.load(results[0], "result_1")
-        pymol.cmd.load(results[1], "result_2")
-        pymol.cmd.png(self.__outputs_path() + self.__pdb_key + "model_alignment.png")
+    def __print_results(self, open_pymol, results):
+        if open_pymol:
+            script_file = str(Path(__file__).parent) + "/pymol_script.py"
+            cmd = f"pymol {script_file} {results[0]} {results[1]}"
+            os.system(cmd)
+        else:
+            detached_pymol = PyMOL()
+            detached_pymol.start()
+            detached_pymol.cmd.load(results[0])
+            detached_pymol.cmd.load(results[1])
+            filename = results[0].split("/")[-1].split(".")[0]
+            second_filename = results[1].split("/")[-1].split(".")[0]
+            detached_pymol.cmd.png(f"{self.__outputs_path() + filename}_{second_filename}_alignment.png")
 
     def __process_and_model_blast_result(self):
         if self.__is_same_protein():
@@ -61,7 +68,7 @@ class Mutaviz:
             alignment_file = self.__align(mutated_protein, pdb_file_path)
             output_pdb_file = self.__move_to_outputs(pdb_file_path, self.__pdb_key + ".pdb")
             self.__debug("Alignment file: " + alignment_file)
-            model_pdb_file = self.__model_structure(alignment_file, self.__sequence_name + "_" + self.__pdb_key)
+            model_pdb_file = self.__model_structure(alignment_file, self.__sequence_name + "_theoretical_model")
 
             return [output_pdb_file, model_pdb_file]
         else:
@@ -78,7 +85,7 @@ class Mutaviz:
         pdb_file_path = self.__fetch_pdb()
         alignment_file = self.__align(mutated_protein, pdb_file_path)
         print(alignment_file)
-        return self.__model_structure(alignment_file, self.__sequence_name + "_" + self.__pdb_key)
+        return self.__model_structure(alignment_file, self.__sequence_name + "_theoretical_model")
 
     def __move_to_outputs(self, src, filename):
         return copyfile(src, self.__outputs_path() + filename)
@@ -113,17 +120,19 @@ class Mutaviz:
 
     def __blast(self, word_size, threshold, matrix_name):
         self.__debug("Performing blast")
-        scan_result = NCBIWWW.qblast(
-            "blastp", "pdb", self.__protein_chain, word_size=word_size,
-            threshold=threshold, matrix_name=matrix_name, gapcosts="11 1"
-        )
-        # with open("backend/serum_albumin_result.xml", "r") as f:
-        #     file = f.read()
-        # scan_result = StringIO(file)
+        # scan_result = NCBIWWW.qblast(
+        #     "blastp", "pdb", self.__protein_chain, word_size=word_size,
+        #     threshold=threshold, matrix_name=matrix_name, gapcosts="11 1"
+        # )
+        with open("backend/serum_albumin_result.xml", "r") as f:
+            file = f.read()
+        scan_result = StringIO(file)
         self.__debug("Blast query done")
         blast_records = NCBIXML.read(scan_result)
         self.__debug("Finding best match")
-        self.__most_similar_structure = reduce(lambda result, output: self.__most_similar_between(result, output), blast_records.alignments)
+        self.__most_similar_structure = reduce(
+            lambda result, output: self.__most_similar_between(result, output), blast_records.alignments
+        )
 
     @property
     def __pdb_key(self):
@@ -169,6 +178,5 @@ class Mutaviz:
     def __fetch_pdb(self):
         pdb_file_path = PDBList().retrieve_pdb_file(self.__pdb_key, pdir='backend/atom_files', file_format="pdb")
         new_file_name = 'backend/atom_files/%s.pdb' % self.__pdb_key
-        # renombro para que tenga el nombre que espera modeller (xxxx.pdb)
         os.rename(pdb_file_path, new_file_name)
         return new_file_name
