@@ -17,7 +17,7 @@ from mutaviz.models.synth import Synthesizer
 
 
 class Mutaviz:
-    def __init__(self, seq_string, mutations, seq_name, seq_type):
+    def __init__(self, seq_string, mutations, seq_name, seq_type, output_path='outputs'):
         self.__seq_type = seq_type
         self.__mutations = mutations
         self.__seq_string = seq_string
@@ -26,6 +26,7 @@ class Mutaviz:
         self.__most_similar_structure = None
         self.__mutated_sequence = None
         self.__logger = logs.logger()
+        self.__outputs_path = str(Path(output_path).absolute()) + "/"
 
     @property
     def protein_chain(self):
@@ -57,7 +58,7 @@ class Mutaviz:
             detached_pymol.cmd.load(results[1])
             filename = results[0].split("/")[-1].split(".")[0]
             second_filename = results[1].split("/")[-1].split(".")[0]
-            detached_pymol.cmd.png(f"{self.__outputs_path() + filename}_{second_filename}_alignment.png")
+            detached_pymol.cmd.png(f"{self.__outputs_path + filename}_{second_filename}_alignment.png")
 
     def __process_and_model_blast_result(self):
         if self.__is_same_protein():
@@ -104,10 +105,7 @@ class Mutaviz:
         return self.__model_structure(alignment_file, model_pdb_id, self.__sequence_name + "_mutation_theoretical_model")
 
     def __move_to_outputs(self, src, filename):
-        return copyfile(src, self.__outputs_path() + filename)
-
-    def __outputs_path(self):
-        return str(Path(__file__).parent.parent) + '/outputs/'
+        return copyfile(src, self.__outputs_path + filename)
 
     def __debug(self, message):
         return self.__logger.info(message)

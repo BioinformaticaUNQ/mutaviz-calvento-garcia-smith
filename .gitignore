@@ -110,7 +110,7 @@ frontend/node_modules
 
 # mutaviz
 mutaviz/modeller/
-mutaviz/outputs/
+outputs/
 mutaviz/bk/
 mutaviz/alignments/
 mutaviz/atom_files/

@@ -42,6 +42,7 @@ if __name__ == "__main__":
     )
     parser.add_argument('--threshold', help='BLAST threshold. Default: 10', default=10)
     parser.add_argument('--word-size', help='BLAST word size. Default: 6', default=6)
+    parser.add_argument('--output-path', help='Path where the output files will be stored', default='./outputs')
     args = parser.parse_args()
 
     seq_string = read_seq(args.fasta)
@@ -50,7 +51,13 @@ if __name__ == "__main__":
     end = args.seq_end and int(args.seq_end) or None
     open_pymol = args.open_pymol == 'true'
 
-    mutaviz = Mutaviz(seq_string=seq_string[start:end], mutations=mutations, seq_name=args.name, seq_type=args.seq_type)
+    mutaviz = Mutaviz(
+        seq_string=seq_string[start:end],
+        mutations=mutations,
+        seq_name=args.name,
+        seq_type=args.seq_type,
+        output_path=args.output_path)
+
     mutaviz.process(
         word_size=int(args.word_size), threshold=int(args.threshold),
         matrix_name=args.matrix_name, gap_costs=args.gap_costs, open_pymol=open_pymol
