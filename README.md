@@ -1,4 +1,22 @@
-# mutaviz
+# Mutaviz
+
+This program allows a user to mutate a dna or rna, synthetize a proteine and model that proteine.
+For that we are using: blast and modeller.
+The work flow is:
+  - The user call the program with a .fasta with the dna/rna, the position where the coding dna/rna of the desired proteine start (index starts at 0), the desired mutations and the desired parameters for blast.
+  - The program will synthetize the proteine from the dna/rna
+  - The program will call blast with the passed parameters and the syntetized proteine
+  - The programm will search on the blast result the best match for the searched proteine. The best match will be calculated by > % of identity, < evalue and > coverage of the sequence. In this case we have two options.
+    - The program find a result that match exactly with the searched proteine, this means that the percentage of identity is more or equals percentage of identity than 99%.
+      - The program mutates the passed dna/rna and synthetize the proteine.
+      - The program will align the mutated proteine sequence with the pdb find in the blast result, using modeller
+      - The program will create the theoretical proteine structure using the aligment and the pdb model 
+    - The searched proteine does not have a exact match in the blast, so the program selects the best match (bases on identity, coverage and evalue).
+      - The program align the proteine sequence with the pdb selected in the blast result, using modeller
+      - The program creates a theoretical proteine structure using the alignment and the pdb model
+      - The program mutates the passed dna/rna and synthetize the proteine.
+      - The program will align the mutated proteine sequence with the theoretical model, using modeller
+      - The program will create the mutated theoretical proteine structure using the aligment and the pdb model 
 
 ## Setup
 
@@ -70,3 +88,16 @@ mutations_dict = ... # A dict containing mutations for mutating the original seq
 mutaviz = Mutaviz(seq_string=seq, mutations=mutations_dict, seq_name="testing", seq_type="DNA")
 mutaviz.process(word_size=6, threshold=10, matrix_name="BLOSUM62", gap_costs="11 1", open_pymol=False)
 ```
+
+### Output
+The output of the program will be by default in the output folder where the program is running, if you set the output parameter the program will store all the output files there.
+If the synthetized proteine exists (the program find a result with 100% of identity) the output will be:
+  - PDB model: <pdb key>_selected_model.pdb this file is the pdb the program find with a 100% of identity in the blast result
+  - Alignment with model: mutated_<seq_name>_<pdb key>_alignment.pir this file is the aligment of the mutated proteine and the pdb that the program find in the blast.
+  - Modeled PDB: <seq_name>__mutation_theoretical_model.pdb this is the result of modeling with the aligment and the pdb model.
+If the synthetized proteine does not exist, the program will select the best match for the searched proteine. In that case the output will be:
+  - PDB model: <pdb key>_selected_model.pdb this file is the pdb the program select as best match.
+  - Alignment with model: model_<seq_name>_<pdb key>_alignment.pir this file is the aligment of the proteine sequence and the pdb that the program find in the blast.
+  - Modeled PDB<seq_name>_theoretical_model this is the result of modeling with the aligment and the pdb model.
+  - Alignment with modeled pdb: mutated_<seq_name>_alignment.pir this file is the aligment of the mutated proteine and the pdb model.
+  - Modeled PDB: <seq_name>__mutation_theoretical_model.pdb this is the result of modeling with the aligment and the pdb modeled.

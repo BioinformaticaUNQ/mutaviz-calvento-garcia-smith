@@ -71,7 +71,7 @@ class Mutaviz:
             output_pdb_file = self.__move_to_outputs(pdb_file_path, self.__pdb_key + "_selected_model.pdb")
 
             alignment_file = self.__align(mutated_protein, self.__pdb_key, pdb_file_path)
-            alignment_file = self.__move_to_outputs(alignment_file, "alignment.pir")
+            alignment_file = self.__move_to_outputs(alignment_file, f"mutated_{self.__sequence_name}_{self.__pdb_key}_alignment.pir")
             self.__debug("Alignment file: " + alignment_file)
 
             model_pdb_file = self.__model_structure(alignment_file, self.__pdb_key, self.__sequence_name + "_mutation_theoretical_model")
@@ -83,7 +83,7 @@ class Mutaviz:
             self.__move_to_outputs(pdb_file_path, self.__pdb_key + "_selected_model.pdb")
 
             alignment_file = self.__align(self.protein_chain, self.__pdb_key, pdb_file_path)
-            alignment_file = self.__move_to_outputs(alignment_file, "selecting_model_alignment.pir")
+            alignment_file = self.__move_to_outputs(alignment_file, f"model_{self.__sequence_name}_{self.__pdb_key}_alignment.pir")
 
             modeled_pdb_name = self.__sequence_name + "_theoretical_model"
             modeled_pdb_file = self.__model_structure(alignment_file, self.__pdb_key, modeled_pdb_name)
@@ -98,7 +98,7 @@ class Mutaviz:
         self.__debug("Mutated protein: " + mutated_protein)
 
         alignment_file = self.__align(mutated_protein, model_pdb_id, modeled_pdb_file)
-        alignment_file = self.__move_to_outputs(alignment_file, "mutation_alignment.pir")
+        alignment_file = self.__move_to_outputs(alignment_file, f"mutated_{self.__sequence_name}_alignment.pir")
         print(alignment_file)
 
         return self.__model_structure(alignment_file, model_pdb_id, self.__sequence_name + "_mutation_theoretical_model")
