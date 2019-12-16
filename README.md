@@ -28,6 +28,12 @@ The program steps are:
 ### Create conda env
 `conda env create -f environment.yml`
 
+If this command does not work, install dependencies manually:
+
+`conda env create -n mutaviz python3.7 biopython=1.74 pymol=2.3.4 modeller=9.23 blas=1.0 pytest=5.2`
+
+Channels for deps are bioconda, salilab and schrodinger
+
 ### Update conda env
 `conda env update -n mutaviz --file environment.yml  --prune`
 
