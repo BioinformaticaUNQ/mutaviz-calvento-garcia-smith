@@ -3,7 +3,7 @@ import json
 
 from mutaviz.models.mutaviz import Mutaviz
 
-
+# this function is for extract the sequence from the fasta file
 def read_seq(input_file):
     with open(input_file, "r") as f:
         lines = f.read().splitlines(True)
@@ -14,6 +14,7 @@ def read_seq(input_file):
     return seq
 
 
+# this function is for reading the mutations from the mutations file
 def read_mutations(mutations_file):
     with open(mutations_file, "r") as f:
         json_data = json.load(f)

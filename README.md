@@ -66,7 +66,7 @@ from mutaviz.models.mutaviz import Mutaviz
 
 seq = ... # A String containing dna, arn or protein chain
 mutations_dict = ... # A dict containing mutations for mutating the original sequence. i.e. {50: 'C'},
-                     # where 50 is the position in the sequence and 'C' is the atom you want to use.
+                     # where 50 is the position in the sequence and 'C' is the aminoacid you want to use.
 mutaviz = Mutaviz(seq_string=seq, mutations=mutations_dict, seq_name="testing", seq_type="DNA")
 mutaviz.process(word_size=6, threshold=10, matrix_name="BLOSUM62", gap_costs="11 1", open_pymol=False)
 ```

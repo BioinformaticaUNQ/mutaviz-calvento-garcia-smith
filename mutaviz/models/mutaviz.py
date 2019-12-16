@@ -62,31 +62,46 @@ class Mutaviz:
     def __process_and_model_blast_result(self):
         if self.__is_same_protein():
             self.__debug("Exact protein found!")
+
             self.mutate()
             mutated_protein = self.synthesize(self.__mutated_sequence)
             self.__debug("Mutated protein: " + mutated_protein)
-            pdb_file_path = self.__fetch_pdb()
-            alignment_file = self.__align(mutated_protein, pdb_file_path)
-            output_pdb_file = self.__move_to_outputs(pdb_file_path, self.__pdb_key + ".pdb")
-            self.__debug("Alignment file: " + alignment_file)
-            model_pdb_file = self.__model_structure(alignment_file, self.__sequence_name + "_theoretical_model")
 
+            pdb_file_path = self.__fetch_pdb()
+            output_pdb_file = self.__move_to_outputs(pdb_file_path, self.__pdb_key + "_selected_model.pdb")
+
+            alignment_file = self.__align(mutated_protein, self.__pdb_key, pdb_file_path)
+            alignment_file = self.__move_to_outputs(alignment_file, "alignment.pir")
+            self.__debug("Alignment file: " + alignment_file)
+
+            model_pdb_file = self.__model_structure(alignment_file, self.__pdb_key, self.__sequence_name + "_mutation_theoretical_model")
+
+            self.__debug(f"Results: [{output_pdb_file}, {model_pdb_file}]")
             return [output_pdb_file, model_pdb_file]
         else:
             pdb_file_path = self.__fetch_pdb()
-            alignment_file = self.__align(self.protein_chain, pdb_file_path)
-            output_pdb_file = self.__model_structure(alignment_file, self.__pdb_key)
-            model_pdb_file = self.__mutate_and_model()
-            return [output_pdb_file, model_pdb_file]
+            self.__move_to_outputs(pdb_file_path, self.__pdb_key + "_selected_model.pdb")
 
-    def __mutate_and_model(self):
+            alignment_file = self.__align(self.protein_chain, self.__pdb_key, pdb_file_path)
+            alignment_file = self.__move_to_outputs(alignment_file, "selecting_model_alignment.pir")
+
+            modeled_pdb_name = self.__sequence_name + "_theoretical_model"
+            modeled_pdb_file = self.__model_structure(alignment_file, self.__pdb_key, modeled_pdb_name)
+
+            mutation_modeled_pdb_file = self.__mutate_and_model(modeled_pdb_name, modeled_pdb_file)
+            self.__debug(f"Results: [{modeled_pdb_file}, {mutation_modeled_pdb_file}]")
+            return [modeled_pdb_file, mutation_modeled_pdb_file]
+
+    def __mutate_and_model(self, model_pdb_id, modeled_pdb_file):
         self.mutate()
         mutated_protein = self.synthesize(self.__mutated_sequence)
         self.__debug("Mutated protein: " + mutated_protein)
-        pdb_file_path = self.__fetch_pdb()
-        alignment_file = self.__align(mutated_protein, pdb_file_path)
+
+        alignment_file = self.__align(mutated_protein, model_pdb_id, modeled_pdb_file)
+        alignment_file = self.__move_to_outputs(alignment_file, "mutation_alignment.pir")
         print(alignment_file)
-        return self.__model_structure(alignment_file, self.__sequence_name + "_theoretical_model")
+
+        return self.__model_structure(alignment_file, model_pdb_id, self.__sequence_name + "_mutation_theoretical_model")
 
     def __move_to_outputs(self, src, filename):
         return copyfile(src, self.__outputs_path() + filename)
@@ -97,9 +112,9 @@ class Mutaviz:
     def __debug(self, message):
         return self.__logger.info(message)
 
-    def __model_structure(self, alignment_file, output_filename):
+    def __model_structure(self, alignment_file, pdb_id, output_filename):
         model_filename = 'mutaviz/modeller/' + Modeller().execute(
-            alignment_file=alignment_file, pdb_id=self.__pdb_key, sequence=self.__sequence_name
+            alignment_file=alignment_file, pdb_id=pdb_id, sequence=self.__sequence_name
         )['name']
 
         return self.__move_to_outputs(model_filename, output_filename + ".pdb")
@@ -125,7 +140,7 @@ class Mutaviz:
         #     "blastp", "pdb", self.__protein_chain, word_size=word_size,
         #     threshold=threshold, matrix_name=matrix_name, gapcosts=gap_costs
         # )
-        with open("mutaviz/serum_albumin_result.xml", "r") as f:
+        with open("mutaviz/Z7ZU2J3C016-Alignment.xml", "r") as f:
             file = f.read()
         scan_result = StringIO(file)
         self.__debug("Blast query done")
@@ -142,9 +157,9 @@ class Mutaviz:
     def __matching_sequence(self):
         return self.__most_similar_structure.hsps[0].sbjct
 
-    def __align(self, protein, pdb_file_path):
+    def __align(self, protein, pdb_key, pdb_file_path):
         aligner = Aligner(path="mutaviz/alignments", sequence_name=self.__sequence_name, sequence_1=protein,
-                          pdb_key=self.__pdb_key, sequence_2=self.__matching_sequence(), pdb_file_path=pdb_file_path)
+                          pdb_key=pdb_key, sequence_2=self.__matching_sequence(), pdb_file_path=pdb_file_path)
         return aligner.execute_alignment()
 
     def __most_similar_between(self, alignment, another_alignment):

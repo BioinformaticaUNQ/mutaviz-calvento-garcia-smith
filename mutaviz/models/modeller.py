@@ -7,7 +7,7 @@ from functools import reduce
 
 
 class Modeller:
-    def execute(self, alignment_file='aln_rat_3v03.pir', pdb_id='3V03', sequence='NM_134326'):
+    def execute(self, alignment_file, pdb_id, sequence):
         generated_model = self.__generate_model(alignment_file, pdb_id, sequence)
 
         return reduce(lambda result, output: self.__best_between(result, output), generated_model.chains[0].seq.outputs)
