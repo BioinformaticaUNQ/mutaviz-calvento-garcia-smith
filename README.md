@@ -103,21 +103,21 @@ mutaviz.process(word_size=6, threshold=10, matrix_name="BLOSUM62", gap_costs="11
 ### Output
 The output of the program will be by default in the output folder where the program is running, if you set the output parameter the program will store all the output files there.
 If the synthesized protein exists (the program find a result with 100% of identity) the output will be:
-  - PDB model: <pdb key>_selected_model.pdb this file is the pdb the program find with a 100% of identity in the blast result
-  - Alignment with model: mutated_<seq_name>_<pdb key>_alignment.pir this file is the aligment of the mutated protein and the pdb that the program find in the blast.
+  - PDB model: <seq_name><pdb key>_selected_model.pdb this file is the pdb the program find with a 100% of identity in the blast result
+  - Alignment with model: <seq_name>_mutated_<pdb key>_alignment.pir this file is the aligment of the mutated protein and the pdb that the program find in the blast.
   - Modeled PDB: <seq_name>__mutation_theoretical_model.pdb this is the result of modeling with the aligment and the pdb model.
 If the synthesized protein does not exist, the program will select the best match for the searched protein. In that case the output will be:
-  - PDB model: <pdb key>_selected_model.pdb this file is the pdb the program select as best match.
-  - Alignment with model: model_<seq_name>_<pdb key>_alignment.pir this file is the aligment of the protein sequence and the pdb that the program find in the blast.
-  - Modeled PDB<seq_name>_theoretical_model this is the result of modeling with the aligment and the pdb model.
-  - Alignment with modeled pdb: mutated_<seq_name>_alignment.pir this file is the aligment of the mutated protein and the pdb model.
+  - PDB model: <seq_name>_<pdb key>_selected_model.pdb this file is the pdb the program select as best match.
+  - Alignment with model: <seq_name>_model_<pdb key>_alignment.pir this file is the aligment of the protein sequence and the pdb that the program find in the blast.
+  - Modeled PDB <seq_name>_theoretical_model this is the result of modeling with the aligment and the pdb model.
+  - Alignment with modeled pdb: <seq_name>_mutated_alignment.pir this file is the aligment of the mutated protein and the pdb model.
   - Modeled PDB: <seq_name>__mutation_theoretical_model.pdb this is the result of modeling with the aligment and the pdb modeled.
 
 ### Pymol outputs
 When PyMOL flag is true, PyMOL will be execute and you will see something like
 ![PyMOL](pymol_mode_screenshot.png)
 
-Otherwise you will get a png of the alignment on the outputs file, i.e.:
+Otherwise you will get a png of the alignment in the outputs file, i.e.:
 ![PyMOL_png](pymol_png.png)
 
 ### Logging
