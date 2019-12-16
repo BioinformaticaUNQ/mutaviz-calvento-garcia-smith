@@ -15,6 +15,15 @@ class Synthesizer:
 
     @classmethod
     def accepting(cls, synth_type, seq):
+        """
+        Creates a new instance to synthesize the sequence of the given type
+        :param synth_type: Type of synthesizer, must match sequence type. Options are DNA, RNA or PROTEIN
+        :type synth_type: str
+        :param seq: Sequence to synthesize
+        :type seq: str
+        :return: Returns a synthesizer instance to process the sequence of the given type
+        :rtype: class:`synth.Synthesizer`
+        """
         return next(
             (synth for synth in cls.__subclasses__() if synth.has_type(synth_type)),
             AdnSynthesizer
@@ -30,32 +39,37 @@ class Synthesizer:
 
     def __init__(self, seq):
         self.__seq = seq
-        self.validate_sequence()
+        self.__validate_sequence()
 
     def run(self):
+        """
+        Synthesizes sequence given on initialization
+        :return: The synthesized protein chain
+        :rtype: str
+        """
         protein = ""
         for i in range(0, len(self.__seq), 3):
             codon = self.__seq[i:i + 3]
             if self.__is_stop_codon(codon):
                 break
-            protein += self.table()[codon]
+            protein += self._table()[codon]
         return protein
 
     def __is_stop_codon(self, codon):
-        return self.table()[codon] == self.STOP
+        return self._table()[codon] == self.STOP
 
     @abstractmethod
-    def table(self):
+    def _table(self):
         raise NotImplementedError
 
     @property
-    def seq(self):
+    def _seq(self):
         return self.__seq
 
-    def validate_sequence(self):
+    def __validate_sequence(self):
         if len(self.__seq) % 3 != 0:
             raise InvalidSequenceLengthException("Sequence length has to multiple a multiple of 3")
-        if len(self.seq) < 60:
+        if len(self._seq) < 60:
             raise InvalidSequenceLengthException("Sequence length not valid. Length has to be greater than 60")
 
 
@@ -64,7 +78,7 @@ class AdnSynthesizer(Synthesizer):
     def synth_type(cls):
         return cls.DNA
 
-    def table(self):
+    def _table(self):
         return {
             'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
             'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
@@ -90,7 +104,7 @@ class ArnSynthesizer(Synthesizer):
     def synth_type(cls):
         return cls.RNA
 
-    def table(self):
+    def _table(self):
         return {
             'AUA': 'I', 'AUC': 'I', 'AUU': 'I', 'AUG': 'M',
             'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACU': 'T',
@@ -116,8 +130,8 @@ class ProteinSynthesizer(Synthesizer):
     def synth_type(cls):
         return cls.PROTEIN
 
-    def table(self):
+    def _table(self):
         pass
 
     def run(self):
-        return self.seq
+        return self._seq

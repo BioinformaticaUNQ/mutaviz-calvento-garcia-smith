@@ -8,6 +8,18 @@ from functools import reduce
 
 class Modeller:
     def execute(self, alignment_file, pdb_id, sequence):
+        """
+        Generates a theoretical model with the alignment, the known PDB id and the sequence.
+        Then finds the best resulting model using the DOPE score
+        :param alignment_file: Path to the file containing the alignment data (pir format)
+        :type alignment_file: str
+        :param pdb_id: PDB id of the known structure
+        :type pdb_id: str
+        :param sequence: Sequence to model
+        :type sequence: str
+        :return: Path to the PDB of generated theoretical model
+        :rtype str
+        """
         generated_model = self.__generate_model(alignment_file, pdb_id, sequence)
 
         return reduce(lambda result, output: self.__best_between(result, output), generated_model.chains[0].seq.outputs)
