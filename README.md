@@ -107,5 +107,12 @@ If the synthesized protein does not exist, the program will select the best matc
   - Alignment with modeled pdb: mutated_<seq_name>_alignment.pir this file is the aligment of the mutated protein and the pdb model.
   - Modeled PDB: <seq_name>__mutation_theoretical_model.pdb this is the result of modeling with the aligment and the pdb modeled.
 
+### Pymol outputs
+When PyMOL flag is true, PyMOL will be execute and you will see something like
+![PyMOL](pymol_mode_screenshot.png)
+
+Otherwise you will get a png of the alignment on the outputs file, i.e.:
+![PyMOL_png](pymol_png.png)
+
 ### Logging
 Mutaviz will print execution steps on the shell and you can also check logs.log file to check all logs whenever you need to (during and after execution).
